@@ -1,17 +1,27 @@
 import express from "express";
+import connectDB from "./db";
+import news from "./routes/news";
+import dotenv from "dotenv";
+import userRouter from "./routes/userRoutes"
+import scheduleRoutes from "./routes/schedulerRoutes";
+import telegramRoutes from "./routes/telegramRoutes";
+import "./services/schedulerService";
+import "./services/newsSchedularService";
+
+dotenv.config();
 
 const app = express();
 const PORT = 5000;
 
-
 app.use(express.json());
 
-app.get("/",(req,res) => {
-    return res.json({
-        message: "API is working"
-    });
-});
+app.use("/api/users", userRouter);
+app.use("/api/news", news);
+app.use("/api/schedules", scheduleRoutes);
+app.use("/api/telegram", telegramRoutes);
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  });
 });
