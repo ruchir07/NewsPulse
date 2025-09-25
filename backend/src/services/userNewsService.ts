@@ -32,9 +32,12 @@ export async function fetchAndScheduleForUser(user: any) {
           user_id: user._id,
           summary_id: summary._id,
           send_time: sendTime,
-          send_method: [
-            user.delivery_method === "both" ? "telegram" : user.delivery_method,
-          ],
+          send_method:
+            user.delivery_method === "both"
+              ? ["telegram", "email"]
+              : Array.isArray(user.delivery_method)
+              ? user.delivery_method
+              : [user.delivery_method],
         });
       }
     }

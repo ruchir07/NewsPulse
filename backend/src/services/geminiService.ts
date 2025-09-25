@@ -1,28 +1,41 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY || "",
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-export async function enhanceNewsArticle(article: { title: string; summary_text: string }) {
-  const prompt = `Enhance the following news article:
-Title: ${article.title}
+export async function enhanceNewsArticle(article?: { title?: string; summary_text?: string }) {
+  if (!article || !article.summary_text) {
+    console.warn("No article or summary provided");
+    return { enhancedTitle: "", enhancedSummary: "" };
+  }
+
+  const prompt = `
+Enhance the following news article.
+
 Summary: ${article.summary_text}
 
-Provide a catchy title and a more descriptive summary.`;
+Generate:
+1. Title: <a short, catchy title>
+2. Summary: <a concise 4-5 line descriptive summary>
+
+Respond strictly in this format:
+Title: ...
+Summary: ...
+`;
 
   try {
-    const response = await genai.models.generateContent({
-      model: 'google/gemini-2.5-flash',
-      contents: prompt,
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent(prompt);
+    const text = result.response.text?.() || "";
 
-    const content = response.text || '';
-    const [enhancedTitle = article.title, enhancedSummary = article.summary_text] = content.split('\n');
+    const titleMatch = text.match(/Title:\s*(.*)/i)?.[1]?.trim();
+    const summaryMatch = text.match(/Summary:\s*([\s\S]*)/i)?.[1]?.trim();
+
+    const enhancedTitle = titleMatch || article.title || "";
+    const enhancedSummary = summaryMatch || article.summary_text || "";
 
     return { enhancedTitle, enhancedSummary };
   } catch (error) {
-    console.error('Error enhancing news article:', error);
-    return { enhancedTitle: article.title, enhancedSummary: article.summary_text };
+    console.error("Error enhancing news article:", error);
+    return { enhancedTitle: article.title || "", enhancedSummary: article.summary_text || "" };
   }
 }
